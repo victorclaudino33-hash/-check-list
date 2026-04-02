@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ability | Safety Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-placeholder">ABILITY</div>
+                <span>Inspeções</span>
+            </div>
+            
+            <div class="history-container">
+                <div class="section-title">REGISTROS RECENTES</div>
+                <div id="historyList" class="history-list"></div>
+            </div>
+
+            <div class="sidebar-footer">
+                <button class="btn-secondary" onclick="gerarRelatorioMensal()">
+                    <i class="fa-solid fa-file-lines"></i> Relatório Mensal
+                </button>
+                <button class="btn-ghost" onclick="limparHistoricoGeral()">Limpar Banco</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="form-card">
+                <div class="form-header">
+                    <h2>Nova Inspeção</h2>
+                    <p>Preencha os dados abaixo para gerar o laudo técnico.</p>
+                </div>
+
+                <form id="checkForm">
+                    <section class="form-section">
+                        <div class="section-header"><i class="fa-solid fa-user-shield"></i> Dados do Inspetor</div>
+                        <div class="field">
+                            <label>Nome do Inspetor Responsável</label>
+                            <input type="text" id="inspetor" placeholder="Ex: João Silva" required>
+                        </div>
+                    </section>
+
+                    <section class="form-section">
+                        <div class="section-header"><i class="fa-solid fa-hard-hat"></i> Identificação do Colaborador</div>
+                        <div class="form-grid">
+                            <div class="field">
+                                <label>Nome Completo</label>
+                                <input type="text" id="nome" placeholder="Nome do colaborador" required>
+                            </div>
+                            <div class="field">
+                                <label>RE (Matrícula)</label>
+                                <input type="text" id="re" placeholder="000000" required>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="form-section">
+                        <div class="section-header"><i class="fa-solid fa-list-check"></i> Itens de Verificação</div>
+                        <div class="checklist-grid">
+                            <label class="check-card">
+                                <input type="checkbox" class="item-check" value="Degraus">
+                                <span class="check-custom"></span>
+                                Degraus
+                            </label>
+                            <label class="check-card">
+                                <input type="checkbox" class="item-check" value="Pica-pau">
+                                <span class="check-custom"></span>
+                                Pica-pau
+                            </label>
+                            <label class="check-card">
+                                <input type="checkbox" class="item-check" value="Estrutura">
+                                <span class="check-custom"></span>
+                                Estrutura
+                            </label>
+                            <label class="check-card">
+                                <input type="checkbox" class="item-check" value="Sapatas">
+                                <span class="check-custom"></span>
+                                Sapatas
+                            </label>
+                            <label class="check-card">
+                                <input type="checkbox" class="item-check" value="Corda">
+                                <span class="check-custom"></span>
+                                Corda
+                            </label>
+                            <label class="check-card">
+                                <input type="checkbox" class="item-check" value="Outros">
+                                <span class="check-custom"></span>
+                                Outros
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="form-section">
+                        <div class="section-header"><i class="fa-solid fa-comment-dots"></i> Detalhes Adicionais</div>
+                        <div class="field">
+                            <textarea id="obs" rows="3" placeholder="Descreva aqui qualquer irregularidade encontrada..."></textarea>
+                        </div>
+                        
+                        <div class="upload-area">
+                            <input type="file" id="f-img" multiple accept="image/*" onchange="handleImgs(this.files)" hidden>
+                            <label for="f-img" class="upload-button">
+                                <i class="fa-solid fa-camera"></i> Anexar Evidências Fotográficas
+                            </label>
+                            <div id="preview" class="preview-grid"></div>
+                        </div>
+                    </section>
+
+                    <button type="button" class="btn-primary" onclick="salvarEGerar()">
+                        <i class="fa-solid fa-circle-check"></i> FINALIZAR E GERAR LAUDO
+                    </button>
+                </form>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
