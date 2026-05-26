@@ -4,262 +4,234 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solicitação de Troca — Escadas</title>
-
-    <!-- Folha de estilos compartilhada do sistema -->
     <link rel="stylesheet" href="style.css">
 
     <!--
     =============================================================
-    PÁGINA DO TÉCNICO — SOLICITAÇÃO DE TROCA DE ESCADA
-    
-    Esta página permite que o técnico de campo registre:
-      - Identificação: nome e RE (registro de empregado)
-      - Escada afetada: identificação
-      - Problema encontrado: descrição textual
-      - Evidência: foto da avaria (máx. 1 foto)
-    
-    Ao enviar, o registro é salvo no localStorage com
-    status "Pendente" para análise no painel do admin.
+    TECNICO.HTML — FORMULÁRIO PÚBLICO DO TÉCNICO
+
+    Acesso: link direto, sem necessidade de login.
+    O técnico preenche os dados e a solicitação vai direto
+    para o Firestore, aparecendo no painel do admin em tempo real.
+
+    Fluxo:
+      1. Técnico abre o link (WhatsApp/e-mail/QR Code)
+      2. Preenche: nome, RE, escada, problema, foto
+      3. Clica em "Enviar Solicitação"
+      4. Dados salvos no Firestore com status "Pendente"
+      5. Admin vê a solicitação aparecer no painel instantaneamente
     =============================================================
     -->
+
+    <!-- Firebase SDKs: App + Firestore (sem Auth — acesso público) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-    <!-- ======================================================
-         CONTAINER PRINCIPAL DO FORMULÁRIO
-    ====================================================== -->
     <div class="container-tecnico">
 
-        <!-- ---- CABEÇALHO DA PÁGINA ---- -->
+        <!-- Cabeçalho -->
         <div class="header-tecnico">
             <h1>TROCA DE <span>ESCADA</span></h1>
-            <p>Solicitação para Almoxarifado · Sistema v2.0</p>
+            <p>Solicitação ao Almoxarifado · Preencha todos os campos</p>
         </div>
 
-
-        <!-- ======================================================
-             CARD DO FORMULÁRIO
-             Todos os campos ficam dentro deste card escuro.
-        ====================================================== -->
+        <!-- Card do formulário -->
         <div class="form-card">
 
-            <!-- ---- CAMPO: NOME DO TÉCNICO ---- -->
+            <!-- Nome do técnico -->
             <div class="field">
                 <label for="nome">Nome do Técnico *</label>
-                <input 
-                    type="text" 
-                    id="nome" 
-                    placeholder="Ex: Carlos Silva"
-                    autocomplete="name"
-                >
+                <input type="text" id="nome" placeholder="Ex: Carlos Silva" autocomplete="name">
             </div>
 
-            <!-- ---- CAMPO: RE (Registro de Empregado) ---- -->
+            <!-- RE / Matrícula -->
             <div class="field">
                 <label for="re">RE / Matrícula *</label>
-                <input 
-                    type="text" 
-                    id="re" 
-                    placeholder="Ex: 00123456"
-                    inputmode="numeric"  <!-- abre teclado numérico em mobile -->
-                >
+                <input type="text" id="re" placeholder="Ex: 00123456" inputmode="numeric">
             </div>
 
-            <!-- ---- CAMPO: IDENTIFICAÇÃO DA ESCADA ---- -->
+            <!-- Identificação da escada -->
             <div class="field">
                 <label for="escada">Escada Afetada *</label>
-                <input 
-                    type="text" 
-                    id="escada" 
-                    placeholder="Ex: ESC-001 / Corredor B"
-                >
+                <input type="text" id="escada" placeholder="Ex: ESC-001 / Corredor B">
             </div>
 
-            <!-- ---- CAMPO: DESCRIÇÃO DO PROBLEMA ---- -->
+            <!-- Descrição do problema -->
             <div class="field">
                 <label for="problema">Problema Identificado *</label>
-                <textarea 
-                    id="problema" 
-                    placeholder="Descreva o defeito ou avaria observada..."
-                    rows="3"
-                ></textarea>
+                <textarea id="problema" placeholder="Descreva o defeito ou avaria observada..." rows="3"></textarea>
             </div>
 
-            <!-- ---- CAMPO: UPLOAD DE FOTO ---- -->
+            <!-- Upload de foto (opcional mas recomendado) -->
             <div class="field">
-                <label>Foto da Evidência</label>
-
-                <!--
-                    O input type="file" está oculto via CSS.
-                    O elemento <label> com "for" faz o papel do botão clicável.
-                    Ao clicar no label, o navegador abre o seletor de arquivos.
-                -->
+                <label>Foto da Evidência <span style="color:var(--branco-3); font-weight:400;">(opcional)</span></label>
                 <label for="foto" class="label-file">
-                    <!-- Ícone de câmera -->
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                         <circle cx="12" cy="13" r="4"/>
                     </svg>
                     <span id="labelFotoTexto">Selecionar foto da avaria</span>
                 </label>
-
-                <!--
-                    accept="image/*" limita a seleção apenas para imagens.
-                    onchange dispara handleFoto() quando o usuário escolhe um arquivo.
-                -->
-                <input 
-                    type="file" 
-                    id="foto" 
-                    accept="image/*"
-                    onchange="handleFoto(this.files)"
-                >
-
-                <!-- Área onde a miniatura da foto aparece após seleção -->
+                <input type="file" id="foto" accept="image/*" onchange="handleFoto(this.files)">
                 <div id="preview"></div>
             </div>
 
-
-            <!-- ---- BOTÃO DE ENVIO ---- -->
             <!--
-                O onclick chama enviarSolicitacao() que valida os campos
-                e salva no localStorage com status "Pendente".
+                Botão de envio.
+                Muda para estado de carregando durante o envio ao Firestore.
+                Volta ao normal após sucesso ou erro.
             -->
-            <button class="btn-enviar" onclick="enviarSolicitacao()">
+            <button class="btn-enviar" id="btnEnviar" onclick="enviarSolicitacao()">
                 ENVIAR SOLICITAÇÃO
             </button>
 
         </div>
-        <!-- FIM CARD DO FORMULÁRIO -->
 
-        <!-- Mensagem de rodapé -->
         <p style="text-align:center; color:var(--branco-3); font-size:12px; margin-top:16px;">
-            * Campos obrigatórios
+            * Campos obrigatórios · Seus dados vão direto para o administrador
         </p>
 
     </div>
-    <!-- FIM CONTAINER PRINCIPAL -->
 
 
-    <!-- ======================================================
-         JAVASCRIPT DA PÁGINA DO TÉCNICO
-    ====================================================== -->
     <script>
+        // ============================================================
+        // CONFIGURAÇÃO DO FIREBASE
+        // ============================================================
+        const firebaseConfig = {
+            apiKey:            "AIzaSyCUhuBLRpfI_Rmha4nMIfrczCNezSmBzu4",
+            authDomain:        "checklist-escadas.firebaseapp.com",
+            projectId:         "checklist-escadas",
+            storageBucket:     "checklist-escadas.firebasestorage.app",
+            messagingSenderId: "749227587613",
+            appId:             "1:749227587613:web:14ae5a1c33185ec028aef4"
+        };
 
-        // Variável global que armazena o base64 da foto selecionada
-        // (começa como null = nenhuma foto)
+        firebase.initializeApp(firebaseConfig);
+
+        // Referência ao Firestore (banco de dados)
+        const db = firebase.firestore();
+
+        // Variável global para a foto em base64
         let fotoBase64 = null;
 
 
-        // --------------------------------------------------------
+        // ============================================================
         // handleFoto(files)
-        // Chamada quando o usuário seleciona um arquivo.
-        // Lê o arquivo como base64 e exibe a miniatura.
-        // --------------------------------------------------------
+        // Lê o arquivo de imagem e converte para base64.
+        // Base64 é uma string que representa a imagem — pode ser
+        // salva diretamente no Firestore como texto.
+        // ============================================================
         function handleFoto(files) {
-
-            // Se nenhum arquivo foi selecionado, encerra
             if (!files || files.length === 0) return;
 
-            const arquivo = files[0]; // Pega só o primeiro arquivo
+            const arquivo = files[0];
 
-            // FileReader converte o arquivo para base64 (formato data URL)
+            // Avisa se o arquivo for maior que 1MB
+            // (Firestore tem limite de 1MB por documento)
+            if (arquivo.size > 1048576) {
+                alert("⚠️ Foto muito grande! Use uma imagem menor que 1MB.");
+                return;
+            }
+
             const reader = new FileReader();
 
-            // Callback: executado quando a leitura terminar
             reader.onload = function(e) {
-                fotoBase64 = e.target.result; // Salva o base64 na variável global
-
-                // Atualiza o label do botão com o nome do arquivo
+                fotoBase64 = e.target.result;
                 document.getElementById('labelFotoTexto').textContent = arquivo.name;
-
-                // Renderiza a miniatura no div de preview
-                const preview = document.getElementById('preview');
-                preview.innerHTML = `<img src="${fotoBase64}" alt="Pré-visualização da evidência">`;
+                document.getElementById('preview').innerHTML =
+                    `<img src="${fotoBase64}" alt="Pré-visualização">`;
             };
 
-            // Inicia a leitura do arquivo como Data URL (base64)
             reader.readAsDataURL(arquivo);
         }
 
 
-        // --------------------------------------------------------
+        // ============================================================
         // enviarSolicitacao()
-        // Valida os campos, monta o objeto de solicitação e
-        // salva no localStorage com status "Pendente".
-        // --------------------------------------------------------
+        // Valida os campos e salva o documento no Firestore.
+        // .add() cria um novo documento com ID automático.
+        // ============================================================
         function enviarSolicitacao() {
 
-            // Lê os valores de cada campo, removendo espaços extras
+            // Lê e limpa os valores dos campos
             const nome     = document.getElementById('nome').value.trim();
             const re       = document.getElementById('re').value.trim();
             const escada   = document.getElementById('escada').value.trim();
             const problema = document.getElementById('problema').value.trim();
 
-            // ---- VALIDAÇÃO: campos obrigatórios ----
+            // Validação: destaca campos vazios
             if (!nome || !re || !escada || !problema) {
-                // Destaca visualmente os campos vazios
-                ['nome', 're', 'escada', 'problema'].forEach(id => {
+                ['nome', 're', 'escada', 'problema'].forEach(function(id) {
                     const el = document.getElementById(id);
                     if (!el.value.trim()) {
-                        // Borda vermelha temporária no campo inválido
                         el.style.borderColor = 'var(--vermelho)';
-                        el.style.boxShadow = '0 0 0 3px rgba(232, 0, 28, 0.2)';
-
-                        // Remove o destaque após 2 segundos
-                        setTimeout(() => {
+                        el.style.boxShadow   = '0 0 0 3px rgba(232,0,28,0.2)';
+                        setTimeout(function() {
                             el.style.borderColor = '';
-                            el.style.boxShadow = '';
-                        }, 2000);
+                            el.style.boxShadow   = '';
+                        }, 2500);
                     }
                 });
-
                 alert("⚠️ Preencha todos os campos obrigatórios!");
-                return; // Para a execução
+                return;
             }
 
-            // ---- MONTA O OBJETO DA SOLICITAÇÃO ----
+            // Muda o botão para estado de carregamento
+            const btn = document.getElementById('btnEnviar');
+            btn.disabled = true;
+            btn.textContent = 'ENVIANDO...';
+
+            // Monta o timestamp atual para ordenação no Firestore
             const agora = new Date();
 
+            // ---- OBJETO DO DOCUMENTO ----
+            // Este é o dado que será salvo no Firestore
             const solicitacao = {
-                id:       Date.now(),          // ID único baseado no timestamp
-                tecnico:  nome.toUpperCase(),  // Nome em maiúsculas para padronizar
-                re:       re,
-                escada:   escada.toUpperCase(),
-                problema: problema,
-                foto:     fotoBase64 || '',    // Base64 da foto, ou vazio se não selecionada
-                data:     agora.toLocaleDateString('pt-BR'),   // "dd/mm/aaaa"
-                hora:     agora.toLocaleTimeString('pt-BR', {  // "HH:MM"
-                              hour: '2-digit', 
-                              minute: '2-digit'
-                          }),
-                mes:      agora.getMonth() + 1, // Número do mês (1-12)
-                status:   'Pendente'             // Status inicial: aguardando análise
+                tecnico:   nome.toUpperCase(),
+                re:        re,
+                escada:    escada.toUpperCase(),
+                problema:  problema,
+                foto:      fotoBase64 || null,   // null se não enviou foto
+                data:      agora.toLocaleDateString('pt-BR'),
+                hora:      agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                status:    'Pendente',            // Status inicial
+                // timestamp é usado para ordenar por data no painel do admin
+                // serverTimestamp() usa o horário do servidor Firebase (mais confiável)
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            // ---- SALVA NO LOCALSTORAGE ----
-            // Carrega o array existente (ou cria um novo se não existir)
-            let historico = JSON.parse(localStorage.getItem('bd_escadas') || '[]');
+            // ---- SALVA NO FIRESTORE ----
+            // db.collection('solicitacoes').add() cria um novo documento
+            // na coleção 'solicitacoes' com ID gerado automaticamente
+            db.collection('solicitacoes').add(solicitacao)
+                .then(function(docRef) {
+                    // ✅ Documento salvo com sucesso
+                    // docRef.id é o ID gerado pelo Firestore
 
-            // Adiciona a nova solicitação ao final do array
-            historico.push(solicitacao);
+                    alert(`✅ Solicitação enviada com sucesso!\n\nEscada: ${solicitacao.escada}\nAguardando aprovação do administrador.`);
 
-            // Salva de volta no localStorage como string JSON
-            localStorage.setItem('bd_escadas', JSON.stringify(historico));
+                    // Reseta o formulário
+                    ['nome', 're', 'escada', 'problema'].forEach(id => document.getElementById(id).value = '');
+                    document.getElementById('foto').value = '';
+                    document.getElementById('preview').innerHTML = '';
+                    document.getElementById('labelFotoTexto').textContent = 'Selecionar foto da avaria';
+                    fotoBase64 = null;
 
-            // ---- FEEDBACK E RESET ----
-            alert(`✅ Solicitação enviada com sucesso!\n\nEscada: ${solicitacao.escada}\nStatus: Pendente de aprovação`);
+                    // Restaura o botão
+                    btn.disabled = false;
+                    btn.textContent = 'ENVIAR SOLICITAÇÃO';
+                })
+                .catch(function(erro) {
+                    // ❌ Erro ao salvar
+                    console.error("Erro ao enviar:", erro);
+                    alert("❌ Erro ao enviar. Verifique sua conexão e tente novamente.");
 
-            // Limpa todos os campos do formulário
-            document.getElementById('nome').value     = '';
-            document.getElementById('re').value       = '';
-            document.getElementById('escada').value   = '';
-            document.getElementById('problema').value = '';
-
-            // Limpa a foto
-            document.getElementById('foto').value = '';
-            document.getElementById('preview').innerHTML = '';
-            document.getElementById('labelFotoTexto').textContent = 'Selecionar foto da avaria';
-            fotoBase64 = null;
+                    btn.disabled = false;
+                    btn.textContent = 'ENVIAR SOLICITAÇÃO';
+                });
         }
 
     </script>

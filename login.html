@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Admin — Gestão de Escadas</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!--
+    =============================================================
+    LOGIN.HTML — PÁGINA DE AUTENTICAÇÃO DO ADMINISTRADOR
+
+    Fluxo:
+      1. Admin digita e-mail + senha
+      2. Firebase Authentication valida as credenciais
+      3. Se OK → redireciona para index.html (painel)
+      4. Se ERRO → exibe mensagem de erro abaixo do formulário
+
+    Segurança:
+      - Apenas usuários cadastrados no Firebase Authentication
+        conseguem acessar o painel admin
+      - A sessão persiste enquanto o navegador estiver aberto
+        (Firebase gerencia o token automaticamente)
+    =============================================================
+    -->
+
+    <!-- Firebase SDK — versão modular (compat para simplicidade) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+
+    <!-- Página centralizada com fundo de grade sutil -->
+    <div class="login-page">
+
+        <!-- Card do formulário de login -->
+        <div class="login-card">
+
+            <!-- Cabeçalho: ícone + título -->
+            <div class="login-header">
+
+                <!-- Ícone de cadeado no bloco vermelho -->
+                <div class="login-icon" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </div>
+
+                <h1>ACESSO <span>ADMIN</span></h1>
+                <p>Gestão de Escadas · Área Restrita</p>
+            </div>
+
+            <!--
+                Caixa de erro — oculta por padrão (display:none via CSS).
+                Aparece com a classe "visivel" quando o login falha.
+            -->
+            <div class="login-erro" id="erroLogin">
+                <!-- Ícone de alerta -->
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <span id="erroMsg">E-mail ou senha incorretos.</span>
+            </div>
+
+            <!-- Campo de e-mail -->
+            <div class="field">
+                <label for="email">E-mail</label>
+                <input
+                    type="email"
+                    id="email"
+                    placeholder="admin@empresa.com"
+                    autocomplete="email"
+                    autofocus
+                >
+            </div>
+
+            <!-- Campo de senha -->
+            <div class="field">
+                <label for="senha">Senha</label>
+                <input
+                    type="password"
+                    id="senha"
+                    placeholder="••••••••"
+                    autocomplete="current-password"
+                >
+            </div>
+
+            <!--
+                Botão de login.
+                Estado normal: "ENTRAR"
+                Estado carregando: spinner + "AGUARDE..."
+                Desabilitado durante a requisição ao Firebase.
+            -->
+            <button class="btn-primary" id="btnLogin" onclick="fazerLogin()">
+                ENTRAR
+            </button>
+
+        </div>
+        <!-- FIM CARD -->
+
+    </div>
+    <!-- FIM PÁGINA -->
+
+
+    <script>
+        // ============================================================
+        // CONFIGURAÇÃO DO FIREBASE
+        // Credenciais do projeto checklist-escadas no Firebase Console.
+        // Estas chaves são públicas (segurança é feita pelas Rules).
+        // ============================================================
+        const firebaseConfig = {
+            apiKey:            "AIzaSyCUhuBLRpfI_Rmha4nMIfrczCNezSmBzu4",
+            authDomain:        "checklist-escadas.firebaseapp.com",
+            projectId:         "checklist-escadas",
+            storageBucket:     "checklist-escadas.firebasestorage.app",
+            messagingSenderId: "749227587613",
+            appId:             "1:749227587613:web:14ae5a1c33185ec028aef4"
+        };
+
+        // Inicializa o Firebase com as configurações acima
+        firebase.initializeApp(firebaseConfig);
+
+        // Cria a referência ao serviço de autenticação
+        const auth = firebase.auth();
+
+
+        // ============================================================
+        // VERIFICAÇÃO DE SESSÃO ATIVA
+        // Se o admin já está logado (sessão salva no navegador),
+        // redireciona direto para o painel sem precisar logar de novo.
+        // ============================================================
+        auth.onAuthStateChanged(function(usuario) {
+            if (usuario) {
+                // Usuário já autenticado → vai direto para o painel
+                window.location.href = 'index.html';
+            }
+            // Se não está logado, permanece na página de login
+        });
+
+
+        // ============================================================
+        // fazerLogin()
+        // Chamada ao clicar em "ENTRAR".
+        // Usa Firebase Auth para validar e-mail + senha.
+        // ============================================================
+        function fazerLogin() {
+
+            // Lê os valores dos campos
+            const email = document.getElementById('email').value.trim();
+            const senha = document.getElementById('senha').value;
+
+            // Valida se os campos foram preenchidos
+            if (!email || !senha) {
+                mostrarErro("Preencha e-mail e senha.");
+                return;
+            }
+
+            // Referências aos elementos do botão
+            const btn = document.getElementById('btnLogin');
+
+            // Muda o botão para estado de carregamento
+            btn.disabled = true;
+            btn.innerHTML = `<div class="spinner"></div> AGUARDE...`;
+
+            // Esconde erro anterior (se houver)
+            document.getElementById('erroLogin').classList.remove('visivel');
+
+            // ---- CHAMADA AO FIREBASE AUTHENTICATION ----
+            // signInWithEmailAndPassword tenta logar com as credenciais
+            auth.signInWithEmailAndPassword(email, senha)
+                .then(function(resultado) {
+                    // ✅ Login bem-sucedido
+                    // O onAuthStateChanged acima vai detectar e redirecionar
+                    // Mas também redirecionamos aqui por segurança
+                    window.location.href = 'index.html';
+                })
+                .catch(function(erro) {
+                    // ❌ Login falhou: senha errada, e-mail não existe, etc.
+
+                    // Restaura o botão ao estado normal
+                    btn.disabled = false;
+                    btn.innerHTML = 'ENTRAR';
+
+                    // Mapeia os códigos de erro do Firebase para mensagens amigáveis
+                    let mensagem = "E-mail ou senha incorretos.";
+                    if (erro.code === 'auth/user-not-found')    mensagem = "E-mail não cadastrado.";
+                    if (erro.code === 'auth/wrong-password')    mensagem = "Senha incorreta.";
+                    if (erro.code === 'auth/invalid-email')     mensagem = "E-mail inválido.";
+                    if (erro.code === 'auth/too-many-requests') mensagem = "Muitas tentativas. Tente mais tarde.";
+                    if (erro.code === 'auth/invalid-credential') mensagem = "E-mail ou senha incorretos.";
+
+                    mostrarErro(mensagem);
+                });
+        }
+
+
+        // ============================================================
+        // mostrarErro(msg)
+        // Exibe a caixa de erro vermelha com a mensagem informada.
+        // ============================================================
+        function mostrarErro(msg) {
+            document.getElementById('erroMsg').textContent = msg;
+            document.getElementById('erroLogin').classList.add('visivel');
+        }
+
+
+        // ============================================================
+        // ATALHO DE TECLADO: Enter nos campos faz login
+        // Melhora a usabilidade sem precisar clicar no botão.
+        // ============================================================
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') fazerLogin();
+        });
+
+    </script>
+
+</body>
+</html>
