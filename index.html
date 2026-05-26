@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin — Gestão de Escadas</title>
+
+    <!-- Folha de estilos compartilhada do sistema -->
+    <link rel="stylesheet" href="style.css">
+
+    <!--
+    =============================================================
+    PAINEL ADMINISTRATIVO — GESTÃO DE ESCADAS
+    
+    Funções principais:
+      - Exibir solicitações de troca pendentes vindas dos técnicos
+      - Permitir aprovação (envia e-mail automático) ou recusa
+      - Exibir métricas rápidas: total, pendentes, aprovadas, negadas
+      - Limpar todo o histórico de solicitações
+    =============================================================
+    -->
+</head>
+<body>
+
+    <!-- ======================================================
+         ELEMENTO DE TOAST / NOTIFICAÇÃO FLUTUANTE
+         Aparece no canto inferior direito ao processar uma ação.
+         Controlado via JS com a classe "show".
+    ====================================================== -->
+    <div id="toast" class="toast">
+        <span id="toastIcone">✓</span>
+        <span id="toastMsg">Ação realizada</span>
+    </div>
+
+
+    <!-- ======================================================
+         CONTAINER PRINCIPAL DO PAINEL
+    ====================================================== -->
+    <div class="admin-container">
+
+        <!-- ---- CABEÇALHO ---- -->
+        <header class="admin-header">
+
+            <!-- Lado esquerdo: ícone + textos -->
+            <div class="admin-header-info">
+
+                <!-- Bloco vermelho com ícone de escada (SVG inline) -->
+                <div class="admin-logo-icon" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <!-- Ícone de escada: três degraus diagonais -->
+                        <polyline points="4 20 4 14 10 14 10 8 16 8 16 2"/>
+                        <line x1="4" y1="20" x2="20" y2="20"/>
+                        <line x1="20" y1="2" x2="20" y2="20"/>
+                    </svg>
+                </div>
+
+                <div>
+                    <h1 class="admin-titulo">PAINEL <span style="color: var(--vermelho);">ADMIN</span></h1>
+                    <p class="admin-subtitulo">Solicitações de Troca · Gestão de Escadas</p>
+                </div>
+            </div>
+
+            <!-- Lado direito: botões de ação global -->
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+
+                <!-- Botão para limpar TODOS os registros (pede confirmação) -->
+                <button class="btn-limpar" onclick="limparHistorico()">
+                    <!-- Ícone de lixeira -->
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                    </svg>
+                    Limpar Histórico
+                </button>
+
+            </div>
+        </header>
+        <!-- FIM CABEÇALHO -->
+
+
+        <!-- ======================================================
+             CARDS DE MÉTRICAS
+             Contadores calculados automaticamente via JS.
+             Cada card mostra um número-chave do sistema.
+        ====================================================== -->
+        <div class="metricas-grid">
+
+            <!-- Total de solicitações registradas -->
+            <div class="metrica-card cinza">
+                <p class="metrica-label">Total</p>
+                <p class="metrica-valor" id="metTotal">0</p>
+            </div>
+
+            <!-- Solicitações ainda aguardando análise -->
+            <div class="metrica-card amarelo">
+                <p class="metrica-label">Pendentes</p>
+                <p class="metrica-valor" id="metPendente">0</p>
+            </div>
+
+            <!-- Solicitações já aprovadas -->
+            <div class="metrica-card verde">
+                <p class="metrica-label">Aprovadas</p>
+                <p class="metrica-valor" id="metAprovado">0</p>
+            </div>
+
+            <!-- Solicitações negadas -->
+            <div class="metrica-card">
+                <!-- Usa a cor padrão (vermelho) definida no CSS -->
+                <p class="metrica-label">Negadas</p>
+                <p class="metrica-valor" id="metRecusado">0</p>
+            </div>
+
+        </div>
+        <!-- FIM MÉTRICAS -->
+
+
+        <!-- ======================================================
+             WRAPPER DA TABELA
+             Tem overflow-x: auto para funcionar em telas pequenas.
+        ====================================================== -->
+        <div class="tabela-wrapper">
+            <table id="tabelaPedidos">
+
+                <!-- Cabeçalho fixo da tabela -->
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Técnico</th>
+                        <th>Escada</th>
+                        <th>Problema Relatado</th>
+                        <th>Evidência</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+
+                <!-- O tbody é populado dinamicamente pela função carregarPendencias() -->
+                <tbody id="corpoTabela">
+                    <!-- As linhas são inseridas via JavaScript -->
+                </tbody>
+
+            </table>
+        </div>
+        <!-- FIM TABELA -->
+
+    </div>
+    <!-- FIM CONTAINER PRINCIPAL -->
+
+
+    <!-- ======================================================
+         JAVASCRIPT DO PAINEL ADMINISTRATIVO
+    ====================================================== -->
+    <script>
+
+        // --------------------------------------------------------
+        // carregarPendencias()
+        // Lê o localStorage, calcula as métricas e renderiza
+        // a tabela completa de solicitações.
+        // --------------------------------------------------------
+        function carregarPendencias() {
+
+            // Busca os dados salvos; se não existir, usa array vazio
+            const lista = JSON.parse(localStorage.getItem('bd_escadas') || '[]');
+
+            // Atualiza os cards de métricas
+            atualizarMetricas(lista);
+
+            const tabela = document.getElementById('corpoTabela');
+            tabela.innerHTML = ''; // Limpa as linhas antigas antes de re-renderizar
+
+            // Filtra apenas as solicitações com status "Pendente"
+            const pendentes = lista.filter(s => s.status === 'Pendente');
+
+            // Se não houver pendentes, exibe o estado vazio
+            if (pendentes.length === 0) {
+                tabela.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="estado-vazio">
+                                <!-- Ícone de caixa vazia -->
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+                                </svg>
+                                <p>Nenhuma solicitação pendente</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return; // Para a execução aqui
+            }
+
+            // Loop: cria uma linha <tr> para cada solicitação pendente
+            pendentes.forEach(s => {
+                const tr = document.createElement('tr');
+
+                // Monta o HTML da linha usando template literals
+                tr.innerHTML = `
+                    <td style="white-space:nowrap; color:var(--branco-2); font-size:13px;">
+                        ${s.data}
+                    </td>
+                    <td>
+                        <!-- Nome do técnico em destaque -->
+                        <strong style="font-size:14px;">${s.tecnico}</strong>
+                    </td>
+                    <td>
+                        <!-- ID da escada com destaque vermelho -->
+                        <span style="
+                            background: var(--vermelho-3);
+                            color: var(--vermelho-2);
+                            padding: 4px 10px;
+                            border-radius: 99px;
+                            font-size: 12px;
+                            font-weight: 600;
+                            letter-spacing: 0.5px;
+                        ">${s.escada}</span>
+                    </td>
+                    <td style="max-width:200px; font-size:13px; color:var(--branco-2);">
+                        ${s.problema}
+                    </td>
+                    <td>
+                        <!-- Foto: clique abre em nova aba para ver em tamanho maior -->
+                        <img 
+                            src="${s.foto}" 
+                            class="thumb" 
+                            onclick="window.open(this.src)"
+                            title="Clique para ampliar"
+                        >
+                    </td>
+                    <td>
+                        <!-- Badge visual do status atual -->
+                        <span class="badge badge-pendente">Pendente</span>
+                    </td>
+                    <td>
+                        <!-- Grupo de botões de ação: Aprovar e Negar -->
+                        <div class="actions-group">
+
+                            <!-- Aprovar: chama processar() com decisão 'Aprovado' -->
+                            <button class="btn-ok" onclick="processar(${s.id}, 'Aprovado')">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                Aprovar
+                            </button>
+
+                            <!-- Negar: chama processar() com decisão 'Recusado' -->
+                            <button class="btn-no" onclick="processar(${s.id}, 'Recusado')">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                Negar
+                            </button>
+
+                        </div>
+                    </td>
+                `;
+
+                tabela.appendChild(tr); // Adiciona a linha na tabela
+            });
+        }
+
+
+        // --------------------------------------------------------
+        // atualizarMetricas(lista)
+        // Conta os itens por status e atualiza os 4 cards numéricos.
+        // --------------------------------------------------------
+        function atualizarMetricas(lista) {
+            // Contagem por filtro de status
+            const total     = lista.length;
+            const pendentes = lista.filter(i => i.status === 'Pendente').length;
+            const aprovados = lista.filter(i => i.status === 'Aprovado').length;
+            const recusados = lista.filter(i => i.status === 'Recusado').length;
+
+            // Atualiza o texto de cada card de métrica no DOM
+            document.getElementById('metTotal').textContent    = total;
+            document.getElementById('metPendente').textContent = pendentes;
+            document.getElementById('metAprovado').textContent = aprovados;
+            document.getElementById('metRecusado').textContent = recusados;
+        }
+
+
+        // --------------------------------------------------------
+        // processar(id, decisao)
+        // Aprova ou nega uma solicitação específica pelo seu ID.
+        // Se aprovado, abre o cliente de e-mail com dados preenchidos.
+        // --------------------------------------------------------
+        function processar(id, decisao) {
+
+            // Carrega toda a lista do localStorage
+            let lista = JSON.parse(localStorage.getItem('bd_escadas'));
+
+            // Encontra o índice do item com o ID correspondente
+            const index = lista.findIndex(item => item.id === id);
+
+            // Se não encontrou, encerra para evitar erros
+            if (index === -1) return;
+
+            const item = lista[index]; // Referência ao item encontrado
+
+            // Se a decisão foi "Aprovado", abre o e-mail pré-preenchido
+            if (decisao === 'Aprovado') {
+                const email   = "almoxarifado@empresa.com";
+                const assunto = `AUTORIZAÇÃO DE TROCA - ${item.escada}`;
+                const corpo   = `Olá,\n\nAutorizo a troca da escada ${item.escada}.\nTécnico solicitante: ${item.tecnico}\nMotivo: ${item.problema}\nData: ${item.data}`;
+
+                // Abre o app de e-mail padrão do usuário
+                window.location.href = `mailto:${email}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
+            }
+
+            // Atualiza o status do item na lista
+            lista[index].status = decisao;
+
+            // Salva a lista atualizada de volta no localStorage
+            localStorage.setItem('bd_escadas', JSON.stringify(lista));
+
+            // Recarrega a tabela para refletir a mudança
+            carregarPendencias();
+
+            // Mostra um toast de feedback visual para o usuário
+            mostrarToast(
+                decisao === 'Aprovado' ? 'toast-sucesso' : 'toast-erro',
+                decisao === 'Aprovado' ? '✓ Solicitação aprovada e e-mail gerado' : '✗ Solicitação negada'
+            );
+        }
+
+
+        // --------------------------------------------------------
+        // limparHistorico()
+        // Remove TODOS os dados do localStorage após confirmação.
+        // --------------------------------------------------------
+        function limparHistorico() {
+
+            // Pede confirmação antes de uma ação irreversível
+            if (confirm("Tem certeza? Isso apagará TODAS as solicitações permanentemente.")) {
+                localStorage.removeItem('bd_escadas');
+                carregarPendencias();
+                mostrarToast('toast-sucesso', '✓ Histórico limpo com sucesso');
+            }
+        }
+
+
+        // --------------------------------------------------------
+        // mostrarToast(tipo, mensagem)
+        // Exibe uma notificação flutuante por 3 segundos.
+        // tipo: 'toast-sucesso' ou 'toast-erro'
+        // --------------------------------------------------------
+        function mostrarToast(tipo, mensagem) {
+            const toast = document.getElementById('toast');
+
+            // Remove classes de tipo antigas para reutilizar o elemento
+            toast.classList.remove('toast-sucesso', 'toast-erro');
+
+            // Aplica o tipo correto e a mensagem
+            toast.classList.add(tipo);
+            document.getElementById('toastMsg').textContent = mensagem;
+
+            // Anima a entrada: adiciona classe "show"
+            toast.classList.add('show');
+
+            // Remove a classe "show" após 3 segundos (some do ecrã)
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+
+        // --------------------------------------------------------
+        // INICIALIZAÇÃO
+        // Quando a página carrega, renderiza a tabela imediatamente.
+        // --------------------------------------------------------
+        carregarPendencias();
+
+    </script>
+
+</body>
+</html>

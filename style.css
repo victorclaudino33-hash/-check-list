@@ -1,0 +1,697 @@
+/* ============================================================
+   SISTEMA DE GESTÃO DE ESCADAS — FOLHA DE ESTILOS PRINCIPAL
+   Paleta: Preto · Vermelho · Branco
+   Fonte principal: 'Bebas Neue' (títulos) + 'DM Sans' (corpo)
+   ============================================================ */
+
+/* ---------- IMPORTAÇÃO DE FONTES DO GOOGLE ---------- */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+/* ---------- VARIÁVEIS GLOBAIS DE DESIGN ----------
+   Aqui definimos as cores, sombras e medidas que serão 
+   reutilizadas em todo o sistema. Mudar aqui = muda tudo. */
+:root {
+    --preto:       #0a0a0a;   /* fundo escuro principal */
+    --preto-2:     #141414;   /* cards e painéis */
+    --preto-3:     #1e1e1e;   /* bordas e separadores */
+    --vermelho:    #e8001c;   /* cor de destaque primária */
+    --vermelho-2:  #ff1a34;   /* hover e brilho */
+    --vermelho-3:  #3d0008;   /* vermelho bem escuro (fundo de badges) */
+    --branco:      #ffffff;   /* texto principal e ícones */
+    --branco-2:    #c8c8c8;   /* texto secundário / muted */
+    --branco-3:    #4a4a4a;   /* bordas sutis */
+
+    /* Sombra vermelha usada em botões e cards ativos */
+    --sombra-vermelha: 0 0 20px rgba(232, 0, 28, 0.3);
+
+    /* Transição padrão para animações suaves */
+    --transicao: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Raio de borda padrão */
+    --borda-raio: 8px;
+    --borda-raio-grande: 14px;
+}
+
+/* ---------- RESET E BASE ----------
+   Remove estilos padrão do navegador para maior controle */
+*, *::before, *::after {
+    box-sizing: border-box;  /* inclui padding e border no cálculo de largura */
+    margin: 0;
+    padding: 0;
+}
+
+/* Estilo base do corpo da página */
+body {
+    font-family: 'DM Sans', sans-serif;
+    background-color: var(--preto);
+    color: var(--branco);
+    min-height: 100vh;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased; /* suaviza as fontes no Mac/Chrome */
+}
+
+/* ---------- SCROLLBAR PERSONALIZADA (Chrome/Edge) ---------- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--preto-2); }
+::-webkit-scrollbar-thumb { 
+    background: var(--vermelho); 
+    border-radius: 99px; 
+}
+
+/* ============================================================
+   COMPONENTES DA PÁGINA DO TÉCNICO (formulário de solicitação)
+   ============================================================ */
+
+/* Wrapper principal da página do técnico */
+.container-tecnico {
+    width: 100%;
+    max-width: 480px;
+    margin: 40px auto;
+    padding: 0 16px;
+}
+
+/* Cabeçalho da página: logo + título */
+.header-tecnico {
+    text-align: center;
+    margin-bottom: 36px;
+    position: relative;
+}
+
+/* Linha vermelha decorativa acima do cabeçalho */
+.header-tecnico::before {
+    content: '';
+    display: block;
+    width: 50px;
+    height: 4px;
+    background: var(--vermelho);
+    margin: 0 auto 20px;
+    border-radius: 2px;
+}
+
+/* Título principal em Bebas Neue — fonte condensada e impactante */
+.header-tecnico h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 3px;
+    color: var(--branco);
+    line-height: 1;
+}
+
+/* Destaque em vermelho na palavra-chave do título */
+.header-tecnico h1 span { color: var(--vermelho); }
+
+/* Subtítulo muted abaixo do título */
+.header-tecnico p {
+    color: var(--branco-2);
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 8px;
+}
+
+/* ---------- CARD DO FORMULÁRIO ---------- */
+.form-card {
+    background: var(--preto-2);
+    border: 1px solid var(--preto-3);
+    border-radius: var(--borda-raio-grande);
+    padding: 32px;
+    /* Transição suave para a borda que aparece no hover */
+    transition: var(--transicao);
+}
+
+/* Ao passar o mouse, uma borda vermelha sutil aparece */
+.form-card:hover {
+    border-color: var(--branco-3);
+}
+
+/* ---------- GRUPOS DE CAMPO ---------- */
+.field {
+    margin-bottom: 20px;
+}
+
+/* Label acima de cada campo */
+.field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--branco-2);
+    margin-bottom: 8px;
+}
+
+/* ---------- INPUTS DE TEXTO ---------- */
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+    width: 100%;
+    padding: 13px 16px;
+    background: var(--preto-3);   /* fundo escuro do campo */
+    border: 1px solid var(--branco-3);
+    border-radius: var(--borda-raio);
+    color: var(--branco);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    transition: var(--transicao);
+    outline: none;
+    appearance: none; /* remove estilo nativo do navegador em selects */
+}
+
+/* Estado de foco: borda vermelha + brilho sutil */
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--vermelho);
+    box-shadow: 0 0 0 3px rgba(232, 0, 28, 0.15);
+    background: #1a0003; /* levemente avermelhado para reforçar o foco */
+}
+
+/* Placeholder em cinza claro */
+input::placeholder, textarea::placeholder {
+    color: var(--branco-3);
+}
+
+/* Ajuste específico para textarea */
+textarea {
+    resize: vertical;  /* usuário pode redimensionar só na vertical */
+    min-height: 90px;
+}
+
+/* ---------- LABEL DE UPLOAD DE FOTO ---------- */
+.label-file {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: transparent;
+    border: 1.5px dashed var(--branco-3);
+    border-radius: var(--borda-raio);
+    padding: 20px;
+    color: var(--branco-2);
+    font-size: 14px;
+    cursor: pointer;
+    transition: var(--transicao);
+}
+
+/* Hover no label de upload: muda cor e borda */
+.label-file:hover {
+    border-color: var(--vermelho);
+    color: var(--vermelho);
+    background: rgba(232, 0, 28, 0.05);
+}
+
+/* Ícone dentro do label de upload */
+.label-file svg {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0; /* não encolhe o ícone */
+}
+
+/* Input de arquivo oculto (o label faz o papel visual) */
+input[type="file"] { display: none; }
+
+/* ---------- ÁREA DE PRÉ-VISUALIZAÇÃO DAS FOTOS ---------- */
+#preview {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+/* Cada miniatura de imagem selecionada */
+#preview img {
+    width: 75px;
+    height: 75px;
+    object-fit: cover;       /* recorta para preencher sem distorcer */
+    border-radius: 6px;
+    border: 2px solid var(--branco-3);
+    transition: var(--transicao);
+}
+
+/* Hover nas miniaturas: destaque com borda vermelha */
+#preview img:hover {
+    border-color: var(--vermelho);
+    transform: scale(1.05);
+}
+
+/* ---------- BOTÃO DE ENVIAR ---------- */
+.btn-enviar {
+    width: 100%;
+    padding: 16px;
+    background: var(--vermelho);
+    color: var(--branco);
+    border: none;
+    border-radius: var(--borda-raio);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: var(--transicao);
+    margin-top: 8px;
+    position: relative;
+    overflow: hidden;  /* necessário para o efeito de shine */
+}
+
+/* Efeito de brilho que passa pelo botão no hover */
+.btn-enviar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transition: left 0.5s ease;
+}
+
+/* Botão hover: mais vermelho + sombra + brilho passa */
+.btn-enviar:hover {
+    background: var(--vermelho-2);
+    box-shadow: var(--sombra-vermelha);
+}
+
+.btn-enviar:hover::before {
+    left: 150%; /* o brilho passa pelo botão */
+}
+
+/* Botão ao ser clicado: afunda levemente */
+.btn-enviar:active {
+    transform: scale(0.98);
+}
+
+/* ============================================================
+   COMPONENTES DA PÁGINA DO ADMINISTRADOR
+   ============================================================ */
+
+/* Wrapper principal do painel admin */
+.admin-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px;
+}
+
+/* ---------- CABEÇALHO DO ADMIN ---------- */
+.admin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--preto-3);
+}
+
+/* Grupo esquerdo: logo + título */
+.admin-header-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+/* Ícone quadrado vermelho no cabeçalho */
+.admin-logo-icon {
+    width: 44px;
+    height: 44px;
+    background: var(--vermelho);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Título do painel em Bebas Neue */
+.admin-titulo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--branco);
+    line-height: 1;
+}
+
+/* Subtítulo muted abaixo do título */
+.admin-subtitulo {
+    font-size: 12px;
+    color: var(--branco-2);
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+/* ---------- CARDS DE MÉTRICAS (contadores no topo) ---------- */
+.metricas-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+}
+
+/* Cada card de métrica */
+.metrica-card {
+    background: var(--preto-2);
+    border: 1px solid var(--preto-3);
+    border-radius: var(--borda-raio-grande);
+    padding: 20px;
+    transition: var(--transicao);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Linha colorida na borda esquerda (varia por tipo) */
+.metrica-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    border-radius: 3px 0 0 3px;
+    background: var(--vermelho); /* sobrescrito por modificadores abaixo */
+}
+
+/* Variantes de cor da borda esquerda */
+.metrica-card.verde::before  { background: #22c55e; }
+.metrica-card.amarelo::before { background: #f59e0b; }
+.metrica-card.cinza::before  { background: var(--branco-2); }
+
+/* Hover sutil nos cards */
+.metrica-card:hover {
+    border-color: var(--branco-3);
+    transform: translateY(-2px);
+}
+
+/* Rótulo pequeno acima do número */
+.metrica-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--branco-2);
+    margin-bottom: 8px;
+}
+
+/* Número grande do card de métrica */
+.metrica-valor {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    color: var(--branco);
+    line-height: 1;
+}
+
+/* ---------- CONTAINER DA TABELA (com scroll horizontal em mobile) ---------- */
+.tabela-wrapper {
+    background: var(--preto-2);
+    border: 1px solid var(--preto-3);
+    border-radius: var(--borda-raio-grande);
+    overflow: hidden;            /* os cantos arredondados funcionam */
+    overflow-x: auto;            /* scroll horizontal em telas pequenas */
+}
+
+/* ---------- TABELA DE PEDIDOS ---------- */
+#tabelaPedidos {
+    width: 100%;
+    border-collapse: collapse; /* remove espaços entre células */
+    min-width: 700px;           /* largura mínima antes do scroll horizontal */
+}
+
+/* Cabeçalho da tabela */
+#tabelaPedidos thead tr {
+    border-bottom: 1px solid var(--preto-3);
+}
+
+/* Células do cabeçalho */
+#tabelaPedidos th {
+    padding: 14px 18px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--branco-2);
+    white-space: nowrap;          /* evita quebra de linha no cabeçalho */
+    background: var(--preto-2);   /* fundo fixo mesmo com scroll */
+}
+
+/* Células do corpo da tabela */
+#tabelaPedidos td {
+    padding: 16px 18px;
+    font-size: 14px;
+    color: var(--branco);
+    border-bottom: 1px solid var(--preto-3);
+    vertical-align: middle;
+}
+
+/* Remove a borda inferior da última linha */
+#tabelaPedidos tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Efeito hover na linha inteira */
+#tabelaPedidos tbody tr {
+    transition: background 0.15s ease;
+}
+
+#tabelaPedidos tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* ---------- MINIATURA DA FOTO NA TABELA ---------- */
+.thumb {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+    cursor: pointer;
+    border: 2px solid var(--preto-3);
+    transition: var(--transicao);
+    display: block;
+}
+
+.thumb:hover {
+    border-color: var(--vermelho);
+    transform: scale(1.1);
+    box-shadow: var(--sombra-vermelha);
+}
+
+/* ---------- BADGE DE STATUS ---------- */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 99px;          /* pílula */
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Ponto colorido dentro do badge */
+.badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+/* Variações de badge por status */
+.badge-pendente {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+}
+
+.badge-aprovado {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.badge-recusado {
+    background: rgba(232, 0, 28, 0.15);
+    color: var(--vermelho-2);
+}
+
+/* ---------- BOTÕES DE AÇÃO ---------- */
+.btn-ok, .btn-no, .btn-limpar, .btn-relatorio {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transicao);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.3px;
+}
+
+/* Botão "Aprovar" — verde */
+.btn-ok {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+}
+
+.btn-ok:hover {
+    background: #22c55e;
+    color: #000;
+    border-color: #22c55e;
+    transform: translateY(-1px);
+}
+
+/* Botão "Negar" — vermelho */
+.btn-no {
+    background: rgba(232, 0, 28, 0.1);
+    color: var(--vermelho-2);
+    border: 1px solid rgba(232, 0, 28, 0.25);
+}
+
+.btn-no:hover {
+    background: var(--vermelho);
+    color: var(--branco);
+    border-color: var(--vermelho);
+    transform: translateY(-1px);
+}
+
+/* Botão "Limpar Histórico" — neutro */
+.btn-limpar {
+    background: transparent;
+    color: var(--branco-2);
+    border: 1px solid var(--branco-3);
+}
+
+.btn-limpar:hover {
+    background: var(--preto-3);
+    color: var(--branco);
+    border-color: var(--branco-2);
+}
+
+/* Botão "Relatório" — vermelho outline */
+.btn-relatorio {
+    background: transparent;
+    color: var(--vermelho-2);
+    border: 1px solid rgba(232, 0, 28, 0.4);
+}
+
+.btn-relatorio:hover {
+    background: var(--vermelho);
+    color: var(--branco);
+    border-color: var(--vermelho);
+    box-shadow: var(--sombra-vermelha);
+}
+
+/* Todos os botões: afundam ao clicar */
+button:active { transform: scale(0.97) !important; }
+
+/* ---------- GRUPO DE AÇÕES (botões lado a lado) ---------- */
+.actions-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* ---------- ESTADO VAZIO DA TABELA ---------- */
+.estado-vazio {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--branco-2);
+}
+
+.estado-vazio svg {
+    width: 48px;
+    height: 48px;
+    opacity: 0.3;
+    margin-bottom: 12px;
+}
+
+.estado-vazio p {
+    font-size: 14px;
+}
+
+/* ---------- TOAST DE NOTIFICAÇÃO ----------
+   Aparece no canto inferior direito ao aprovar/negar */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 14px 20px;
+    border-radius: var(--borda-raio);
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
+    transform: translateY(100px);  /* começa fora da tela */
+    opacity: 0;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); /* efeito de mola */
+    max-width: 320px;
+    backdrop-filter: blur(10px);
+}
+
+/* Toast visível */
+.toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+/* Variante de sucesso */
+.toast-sucesso {
+    background: rgba(22, 27, 22, 0.95);
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    color: #22c55e;
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+}
+
+/* Variante de erro */
+.toast-erro {
+    background: rgba(27, 10, 10, 0.95);
+    border: 1px solid rgba(232, 0, 28, 0.4);
+    color: var(--vermelho-2);
+    box-shadow: var(--sombra-vermelha);
+}
+
+/* ---------- ANIMAÇÃO DE ENTRADA DAS LINHAS DA TABELA ---------- */
+@keyframes fadeInRow {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Cada nova linha da tabela anima ao aparecer */
+#corpoTabela tr {
+    animation: fadeInRow 0.3s ease forwards;
+}
+
+/* Delay escalonado para cada linha (efeito cascata) */
+#corpoTabela tr:nth-child(1) { animation-delay: 0.05s; }
+#corpoTabela tr:nth-child(2) { animation-delay: 0.10s; }
+#corpoTabela tr:nth-child(3) { animation-delay: 0.15s; }
+#corpoTabela tr:nth-child(4) { animation-delay: 0.20s; }
+#corpoTabela tr:nth-child(5) { animation-delay: 0.25s; }
+
+/* ---------- RESPONSIVIDADE BÁSICA ---------- */
+@media (max-width: 600px) {
+    /* Cabeçalho do admin empilha em mobile */
+    .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* Cards de métrica ocupam metade da tela */
+    .metricas-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    /* Formulário sem padding lateral excessivo */
+    .form-card {
+        padding: 24px 20px;
+    }
+}
