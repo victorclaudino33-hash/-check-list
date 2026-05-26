@@ -31,6 +31,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -297,15 +298,38 @@
         // decisao: 'Aprovado' ou 'Recusado'
         // item: objeto com dados (necessário para o e-mail)
         // ============================================================
-        function processar(docId, decisao, item) {
+   function processar(docId, decisao, item) {
 
-            // Se aprovado, abre o cliente de e-mail com dados preenchidos
-            if (decisao === 'Aprovado' && item) {
-                const email   = "almoxarifado@empresa.com";
-                const assunto = `AUTORIZAÇÃO DE TROCA - ${item.escada}`;
-                const corpo   = `Olá,\n\nAutorizo a troca da escada ${item.escada}.\nTécnico: ${item.tecnico}\nMotivo: ${item.problema}\nData: ${item.data}`;
-                window.open(`mailto:${email}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`);
-            }
+    if (decisao === 'Aprovado' && item) {
+
+        emailjs.init("mKipnyk8gseSW272E"); // ← cole sua chave pública aqui
+
+        emailjs.send("service_yxctjnq", "template_xxk48xw", {
+            escada:   item.escada,
+            tecnico:  item.tecnico,
+            re:       item.re,
+            problema: item.problema,
+            data:     item.data
+        }).then(function() {
+            console.log("✅ E-mail enviado ao almoxarifado!");
+        }).catch(function(erro) {
+            console.error("❌ Erro no e-mail:", erro);
+        });
+    }
+
+    db.collection('solicitacoes').doc(docId)
+      .update({ status: decisao })
+      .then(function() {
+          mostrarToast(
+              decisao === 'Aprovado' ? 'toast-sucesso' : 'toast-erro',
+              decisao === 'Aprovado' ? '✓ Aprovado e e-mail enviado' : '✗ Solicitação negada'
+          );
+      })
+      .catch(function(erro) {
+          console.error("Erro ao processar:", erro);
+          mostrarToast('toast-erro', '✗ Erro ao processar. Tente novamente.');
+      });
+}
 
             // Atualiza o campo "status" do documento no Firestore
             // .update() modifica apenas os campos especificados
@@ -322,9 +346,6 @@
                   console.error("Erro ao processar:", erro);
                   mostrarToast('toast-erro', '✗ Erro ao processar. Tente novamente.');
               });
-        }
-
-
         // ============================================================
         // limparHistorico()
         // Apaga TODOS os documentos da coleção 'solicitacoes'.
